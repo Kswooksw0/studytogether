@@ -5,12 +5,14 @@
 
     <div class="float-container">
       <div class="float-left">
-        <v-date-picker v-model="date"></v-date-picker>
+        <v-date-picker v-model="date" :min-date="new Date()"></v-date-picker>
       </div>
       <div class="float-right">
         <div class="timeslot">
           <div v-if="dateSelected && availableTime">
-            <button v-on:click="showModal">Add Timeslots</button>
+            <b-button variant="outline-primary" v-b-modal.modal-prevent-closing
+              >Add Timeslots</b-button
+            >
             <button v-on:click="selectAll()">Select All</button>
             <h3>Time: Pax</h3>
             <label
@@ -28,13 +30,14 @@
           </div>
           <div v-else-if="dateSelected">
             <b-button variant="outline-primary" v-b-modal.modal-prevent-closing
-              >Add Timeslots</b-button>
+              >Add Timeslots</b-button
+            >
             <h3>No timeslots available</h3>
           </div>
           <div v-else>Choose a date to start</div>
 
           <div>
-            <modal
+            <!-- <modal
               v-show="isModalVisible"
               @close="closeModal"
               @apply="
@@ -53,74 +56,51 @@
                   v-model="applyMonth"
                 />Apply for the Month
               </template>
-            </modal>
+            </modal> -->
 
             <b-modal
               id="modal-prevent-closing"
               ref="modal"
-              title="Choose your Filters"
-              @show="resetModal"
-              @hidden="resetModal"
-              @ok="handleOk"
+              title="Choose your Timeslots"
+              @ok="add()"
               ok-only
             >
               <form ref="form" @submit.stop.prevent="handleSubmit">
-                <h4>Location</h4>
-                <b-form-checkbox-group
-                  v-model="location"
-                  :options="locationOptions"
-                  class="mb-3"
-                  value-field="item"
-                  text-field="name"
-                  disabled-field="notEnabled"
-                ></b-form-checkbox-group>
+                <h4>Opening Time</h4>
+                <b-form-input
+                  v-model="start"
+                  placeholder="Opening Time in HHMM format. Eg. 0000"
+                ></b-form-input>
                 <div>
-                  Selected: <strong>{{ location }}</strong>
+                  Selected: <strong>{{ start }}</strong>
                 </div>
-                <h4>Price Level</h4>
-                <b-form-checkbox-group
-                  id="checkbox-group-2"
-                  v-model="price"
-                  :aria-describedby="ariaDescribedby"
-                >
-                  <b-form-checkbox value="cheap"
-                    ><b-icon icon="cash-stack" class="filter-cash"></b-icon
-                  ></b-form-checkbox>
-                  <b-form-checkbox value="medium"
-                    ><b-icon icon="cash-stack" class="filter-cash"></b-icon
-                    ><b-icon icon="cash-stack" class="filter-cash"></b-icon
-                  ></b-form-checkbox>
-                  <b-form-checkbox value="expensive"
-                    ><b-icon icon="cash-stack" class="filter-cash"></b-icon
-                    ><b-icon icon="cash-stack" class="filter-cash"></b-icon
-                    ><b-icon icon="cash-stack" class="filter-cash"></b-icon
-                  ></b-form-checkbox>
-                </b-form-checkbox-group>
+                <h4>Closing Time</h4>
+                <b-form-input
+                  v-model="end"
+                  placeholder="Closing Time in HHMM format. Eg. 0000"
+                ></b-form-input>
                 <div>
-                  Selected: <strong>{{ price }}</strong>
+                  Selected: <strong>{{ end }}</strong>
                 </div>
-                <h4>Noise Level</h4>
+
+                <h4>Maximum PAX</h4>
+                <b-form-input
+                  type="number"
+                  v-model="pax"
+                  placeholder="Maximum PAX"
+                ></b-form-input>
+                <div>
+                  Selected: <strong>{{ pax }}</strong>
+                </div>
                 <b-form-checkbox-group
                   id="checkbox-group-2"
-                  v-model="noise"
-                  :aria-describedby="ariaDescribedby"
+                  :value="true"
+                  v-model="applyMonth"
                 >
-                  <b-form-checkbox :value="1"
-                    ><b-icon icon="volume-off" class="filter-volume"></b-icon
-                  ></b-form-checkbox>
-                  <b-form-checkbox :value="2"
-                    ><b-icon icon="volume-off" class="filter-volume"></b-icon
-                    ><b-icon icon="volume-down" class="filter-volume"></b-icon
-                  ></b-form-checkbox>
-                  <b-form-checkbox :value="3"
-                    ><b-icon icon="volume-off" class="filter-volume"></b-icon
-                    ><b-icon icon="volume-down" class="filter-volume"></b-icon
-                    ><b-icon icon="volume-up" class="filter-volume"></b-icon
-                  ></b-form-checkbox>
+                  <b-form-checkbox
+                    >Create timeslots for entire Month</b-form-checkbox
+                  >
                 </b-form-checkbox-group>
-                <div>
-                  Selected: <strong>{{ noise }}</strong>
-                </div>
 
                 <!-- <div>
           <input type="checkbox" id="cheap" value="cheap" v-model="price" />
@@ -168,12 +148,12 @@ import Header from "../UI/Header.vue";
 import firebase from "firebase";
 import database from "../../firebase.js";
 import DatePicker from "v-calendar/lib/components/date-picker.umd";
-import modal from "../Modal.vue";
+// import modal from "../Modal.vue";
 
 export default {
   data() {
     return {
-      bizID: "5iBl58sV6uv7riUzCQzn", //change according to user
+      bizID: "", //change according to user
       timeslots: [],
       selected: new Array(), //timeslot selected
       paxDisplayed: 0,
@@ -184,7 +164,7 @@ export default {
       end: "",
       dateSelected: false,
       availableTime: false,
-      isModalVisible: false,
+      // isModalVisible: false,
       applyMonth: false,
     };
   },
@@ -192,24 +172,29 @@ export default {
   components: {
     "app-header": Header,
     "v-date-picker": DatePicker,
-    modal: modal,
+    // modal: modal,
   },
 
   watch: {
     date: async function () {
+      this.selected = new Array();
       this.dateSelected = true;
       await this.fetch();
     },
   },
 
   methods: {
+    fetchID: function () {
+      this.bizID = firebase.auth().currentUser.uid;
+    },
+
     selectAll: function () {
       this.selected = this.timeslots;
     },
 
-    showModal: function () {
-      this.isModalVisible = true;
-    },
+    // showModal: function () {
+    //   this.isModalVisible = true;
+    // },
 
     closeModal: function () {
       this.isModalVisible = false;
@@ -408,12 +393,15 @@ export default {
         var time = this.selected[i]["time"];
         console.log("update: " + time);
         var updatedValue = this.pax;
+        this.selected[i]["pax"] = updatedValue
         docRef
           .update({
             [time]: updatedValue, //update the firebase
           })
-          .then(() => location.reload());
+          // .then(() => location.reload());
       }
+      this.pax = ""
+      this.selected = new Array();
     },
 
     del: function () {
@@ -434,13 +422,21 @@ export default {
       for (var i = 0; i < this.selected.length; i++) {
         var time = this.selected[i]["time"];
         console.log("delete: " + time);
+        var index = this.timeslots.indexOf(this.selected[i])
+        this.timeslots.splice(index,1)
         docRef
           .update({
             [time]: FieldValue.delete(), //delete field in firebase
           })
-          .then(() => location.reload());
+          // .then(() => location.reload());
       }
+      this.selected = new Array();
     },
+  },
+
+  created() {
+    this.fetchID();
+    console.log(this.bizID);
   },
 };
 </script>
