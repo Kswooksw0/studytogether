@@ -9,7 +9,7 @@
           <li v-if="loggedIn == 'customer'"><router-link to="/bookings">Bookings</router-link></li>
           <li v-if="loggedIn == 'customer'"><router-link to="/favourites">Favourites</router-link></li>
           <li v-if="loggedIn == 'customer'"><router-link to="/userChart">My Stats</router-link></li>
-          <li v-if="loggedIn == 'owner'"><router-link to ="/bizdashboard">Business Dashboard</router-link></li>
+          <li v-if="loggedIn == 'owner'"><router-link to ="/bizdashboard">Business Stats</router-link></li>
           <li v-if="loggedIn == 'owner'"><router-link :to="{path: '/listings/' + this.userID }">My Listings</router-link></li>
           <li v-if="loggedIn == 'owner'"><router-link to="/mybiz">My Biz</router-link></li>
           <li v-if="loggedIn == 'owner'"><router-link to="/bizBookings">Bookings</router-link></li>

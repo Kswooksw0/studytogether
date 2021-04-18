@@ -137,18 +137,45 @@
       </div>
       <div class="reviews">
         <h3>Reviews:</h3>
+        <div class="sorting">
+          <b-dropdown text="SortBy">
+            <b-dropdown-item
+              v-for="option in sortOptions"
+              :key="option.value"
+              :value="option.value"
+              @click="sortBy = option.value"
+            >
+              {{ option.text }}
+            </b-dropdown-item>
+            <template v-slot:button-content>
+              {{ sortBy }}
+            </template>
+          </b-dropdown>
+          <b-button
+            squared
+            variant="outline-secondary"
+            v-on:click="ascending = !ascending"
+            class="sort-button"
+          >
+            <b-icon v-if="ascending" icon="sort-down"></b-icon>
+            <b-icon v-else icon="sort-down-alt"></b-icon>
+            <!-- <i v-if="ascending" class="fa fa-sort-up"></i>
+        <i v-else class="fa fa-sort-down"></i>
+        Reverse -->
+          </b-button>
+        </div>
         <div v-if="reviews.length == 0">
           No reviews yet. Make a booking and be the first to leave a review!
         </div>
         <div v-if="reviews.length != 0">
           <ul class="review-list">
             <li v-for="commentIndex in commentsToShow" :key="commentIndex">
-              <div class="indiv-review" v-if="commentIndex <= reviews.length">
+              <div class="indiv-review" v-if="commentIndex <= displayedList.length">
                 <div class="review-title">
-                  <h5>{{ reviews[commentIndex - 1].title }}</h5>
+                  <h5>{{ displayedList[commentIndex - 1].title }}</h5>
                   <div class="review-ratings">
                     <b-icon
-                      v-if="reviews[commentIndex - 1].noise > 2"
+                      v-if="displayedList[commentIndex - 1].noise > 2"
                       icon="volume-up"
                       style="
                         margin-top: auto;
@@ -157,7 +184,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-else-if="reviews[commentIndex - 1].noise > 1"
+                      v-else-if="displayedList[commentIndex - 1].noise > 1"
                       icon="volume-down"
                       style="
                         margin-top: auto;
@@ -175,7 +202,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-if="reviews[commentIndex - 1].rating >= 1"
+                      v-if="displayedList[commentIndex - 1].rating >= 1"
                       icon="star-fill"
                       style="
                         margin-top: auto;
@@ -185,7 +212,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-else-if="reviews[commentIndex - 1].rating >= 0.5"
+                      v-else-if="displayedList[commentIndex - 1].rating >= 0.5"
                       icon="star-half"
                       style="
                         margin-top: auto;
@@ -195,7 +222,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-if="reviews[commentIndex - 1].rating >= 2"
+                      v-if="displayedList[commentIndex - 1].rating >= 2"
                       icon="star-fill"
                       style="
                         margin-top: auto;
@@ -205,7 +232,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-else-if="reviews[commentIndex - 1].rating >= 1.5"
+                      v-else-if="displayedList[commentIndex - 1].rating >= 1.5"
                       icon="star-half"
                       style="
                         margin-top: auto;
@@ -215,7 +242,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-if="reviews[commentIndex - 1].rating >= 3"
+                      v-if="displayedList[commentIndex - 1].rating >= 3"
                       icon="star-fill"
                       style="
                         margin-top: auto;
@@ -225,7 +252,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-else-if="reviews[commentIndex - 1].rating >= 2.5"
+                      v-else-if="displayedList[commentIndex - 1].rating >= 2.5"
                       icon="star-half"
                       style="
                         margin-top: auto;
@@ -235,7 +262,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-if="reviews[commentIndex - 1].rating >= 4"
+                      v-if="displayedList[commentIndex - 1].rating >= 4"
                       icon="star-fill"
                       style="
                         margin-top: auto;
@@ -245,7 +272,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-else-if="reviews[commentIndex - 1].rating >= 3.5"
+                      v-else-if="displayedList[commentIndex - 1].rating >= 3.5"
                       icon="star-half"
                       style="
                         margin-top: auto;
@@ -255,7 +282,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-if="reviews[commentIndex - 1].rating >= 5"
+                      v-if="displayedList[commentIndex - 1].rating >= 5"
                       icon="star-fill"
                       style="
                         margin-top: auto;
@@ -265,7 +292,7 @@
                       "
                     ></b-icon>
                     <b-icon
-                      v-else-if="reviews[commentIndex - 1].rating >= 4.5"
+                      v-else-if="displayedList[commentIndex - 1].rating >= 4.5"
                       icon="star-half"
                       style="
                         margin-top: auto;
@@ -278,11 +305,11 @@
                 </div>
                 <div class="review-comment">
                     <p>
-                  {{ reviews[commentIndex - 1].comments }}
+                  {{ displayedList[commentIndex - 1].comments }}
                   </p>
                 </div>
                 <div class="review-author">
-                    - {{ reviews[commentIndex - 1].user }}
+                    - {{ displayedList[commentIndex - 1].user }}
                 </div>
                 <!-- <div class="noiseLvl">
                   Noise:
@@ -337,8 +364,8 @@
             </li>
             <div
               v-if="
-                commentsToShow < reviews.length ||
-                reviews.length > commentsToShow
+                commentsToShow < displayedList.length ||
+                displayedList.length > commentsToShow
               "
             >
               <button class="showMore" @click="commentsToShow += 3">
@@ -372,9 +399,38 @@ export default {
       reviews: [],
       commentsToShow: 3,
       totalComments: 0,
+      sortBy: "Sort By",
+      sortOptions: [
+        // { value: null, text: "Sort By" },
+        { value: "Date", text: "Date" },
+        { value: "Ratings", text: "Ratings" },
+      ],
+      ascending: true,
     };
   },
-  methods: {
+ computed: {
+    displayedList: function () {
+      let tempList = this.reviews;
+      console.log(tempList)
+
+      console.log("computed");
+
+      //sort method
+      if (this.sortBy == "Date") {
+        tempList = tempList.sort((x, y) => x.date - y.date);
+      } else if (this.sortBy == "Ratings") {
+        tempList = tempList.sort((x, y) => x.rating - y.rating);
+      }
+
+      // Show sorted array in descending or ascending order
+      if (!this.ascending) {
+        tempList.reverse();
+      }
+      console.log(tempList)
+      return tempList;
+    }
+ },
+ methods: {
     fetchItems: async function () {
       await database
         .collection("listings")
@@ -385,6 +441,7 @@ export default {
           this.listingDetails = toAdd;
         });
 
+      
       console.log(this.$route.params.id)
 
       await database
@@ -399,6 +456,9 @@ export default {
             console.log(this.reviews[0]);
           });
         });
+
+        console.log(this.listingDetails.photos)
+        this.displayedList = this.reviews
 
         console.log(this.reviews)
     },
@@ -436,6 +496,9 @@ export default {
 
   watch: {
     $route: "fetchItems",
+    sortBy: function() {
+      console.log(this.sortBy)
+    }
   },
 };
 </script>
