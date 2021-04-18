@@ -3,11 +3,13 @@
     <app-header></app-header>
     
     <div class="table" v-if="newBookings.length > 0">
-        <h1>Bookings</h1>
+        <!-- <h1>Bookings</h1> -->
+        <!-- <br><br> -->
       <ul>
         <!-- <h3><b>Upcoming</b></h3> -->
-        <h1>Upcoming</h1>
-        <li class="segment" v-for="booking in newBookings" :key="booking.index">
+        <h1>Upcoming Bookings</h1>
+        <br>
+        <li class="segment" v-for="(booking, index) in newBookings" :key="index">
           <!-- picture -->
           <!-- <div class="picture"> -->
           <img :src="booking[6]" alt="picture" class="main-pic" />
@@ -22,9 +24,9 @@
               <b-button
                 class="button"
                 variant="outline-danger"
-                v-bind:id="booking[8]"
+                v-bind:val="booking[8]"
                 v-on:click="
-                  cancel(booking.index);
+                  cancel(index);
                   del($event);
                 "
                 >Cancel Booking</b-button
@@ -108,8 +110,9 @@
               <b-button
                 class="button"
                 variant="outline-success"
-                v-bind:id ="booking[2]" 
+                v-bind:locId ="booking[2]" 
                 v-bind:date="booking[5]"
+                v-bind:id ="booking[8][0]"
                 v-on:click="route($event)"
                 >Leave Review</b-button
               >
@@ -203,23 +206,87 @@ export default {
         },
 
         route: function(event) {
-            console.log(event)
-            let doc_id = event.target.getAttribute("id");
+            let doc_id = event.target.getAttribute("id")
+            let loc_id = event.target.getAttribute("locId");
             let dateBooked = event.target.getAttribute("date");
-
-            console.log(doc_id)
-            console.log(this.pastBookings)
-            this.$router.push({path: `reviews/${doc_id}`, query: {id: doc_id, date: dateBooked}})
+            // console.log(loc_id)
+            // console.log(this.pastBookings)
+            this.$router.push({path: `reviews/${loc_id}`, query: {loc_id: loc_id, date: dateBooked, doc_id: doc_id}})
         },
 
-        del: function (event) {
-          let id = event.target.getAttribute("id");
-          database
-            .collection("bookings")
-            .doc(id)
-            .delete()
-            .then(() => console.log("delete success"));
+        visitDateToString: function(dateOfVisit) {
+            // dateOfVisit == Apr 17 2021
+            // month == Apr
+            let month = dateOfVisit.slice(0,3)
+            // day == 17
+            let day = dateOfVisit.slice(4,6)
+            // year == 21
+            let year = dateOfVisit.slice(-2)
+
+            let monthString = ''
+            let dayString = day
+            let yearString = year
+
+            if (month == 'Jan') {
+                monthString = '01'
+            } else if (month == 'Feb') {
+                monthString = '02'
+            } else if (month == 'Mar') {
+                monthString = '03'
+            } else if (month == 'Apr') {
+                monthString = '04'
+            } else if (month == 'May') {
+                monthString = '05'
+            } else if  (month == 'Jun') {
+                monthString = '06'
+            } else if (month == 'Jul') {
+                monthString = '07'
+            } else if (month == 'Aug') {
+                monthString = '08'
+            } else if (month == 'Sep') {
+                monthString = '09'
+            } else if (month == 'Oct') {
+                monthString = '10'
+            } else if (month == 'Nov') {
+                monthString = '11'
+            } else if (month == 'Dec') {
+                monthString = '12'
+            }
+            return dayString + monthString + yearString
         },
+
+        del: async function(event) {
+            let values = event.target.getAttribute("val")
+            let id = values.split(',')[0]
+            let loc = values.split(',')[1]
+            let pax = values.split(',')[2]
+            let dateOfVisit = values.split(',')[3]
+            let stringOfVisitDate = this.visitDateToString(dateOfVisit)
+
+            async function getTime() {                
+                let time = []
+                await database.collection('bookings').doc(id).get().then(doc => {
+                    let data = doc.data()
+                    let timeArr = data['time']
+                    time = timeArr
+                })
+                return time
+            }
+
+            let arrOfBookings = await getTime()
+
+            const increasePax = firebase.firestore.FieldValue.increment(pax)
+            const timeslots = database.collection('listings').doc(loc).collection('timeslots').doc(stringOfVisitDate)
+        
+            for(var booking of arrOfBookings) {
+                console.log(booking)
+                timeslots.update({
+                    [booking] :increasePax
+                })
+            }
+            database.collection('bookings').doc(id).delete().then(() => console.log('delete success'))
+        },
+
 
         cancel: function(idx) {
             this.newBookings.splice(idx,1)
@@ -264,45 +331,104 @@ export default {
               }
             }
 
-            this.docArr.forEach(async function (doc) {
-              let id = [doc["id"]];
-              let userid = doc["userid"];
-              let location = doc["location"];
-              let pax = doc["pax"];
-              async function retrieve(locationId) {
-                var locationData = [];
-                await database
-                  .collection("listings")
-                  .doc(locationId)
-                  .get()
-                  .then((doc) => {
-                    let listingData = doc.data();
-                    locationData.push(listingData["cover_photo"]);
-                    locationData.push(listingData["name"]);
-                  });
-                return locationData;
-              }
-              let locationAndName = await retrieve(location);
-              let date = doc["date"].toDate().toString();
-              let dateOfVisit = date.slice(4, 15);
-              let month = dateOfVisit.slice(0,3);
-              let time = doc["time"];
-              let start = time[0].slice(0, 4);
-              let end = time.pop().slice(-4);
-              let duration = start + " - " + end;
-              let booking = [userid, pax, location, dateOfVisit, duration, month];
-              let combined = [...booking, ...locationAndName, ...id];
-              if (new Date() < new Date(combined[3]) && combined[0] == currentUser) {
-                upcoming.push(combined);
-                upcoming.sort(sortByDateUpcoming);
-              } else if (combined[0] == currentUser) {
-                past.push(combined);
-                past.sort(sortByDatePast);
-              }
-            });
-            this.newBookings = upcoming;
-            this.pastBookings = past;
-          },
+            // function convertUTCDateToLocalDate(date) {
+            //     var newDate = new Date(date.getTime()+date.getTimezoneOffset()*60*1000);
+
+            //     var offset = date.getTimezoneOffset() / 60;
+            //     var hours = date.getHours();
+
+            //     newDate.setHours(hours - offset);
+
+            //     return newDate;   
+            // }
+
+            // sorts the timings in the 'time' array in firestore. 
+            // if the array is ['0900 - 1000', '0800 - 0900', '1400 - 1500','1300 - 1400'],
+            // it returns ['0800 - 0900', '0900 - 1000', '1300 - 1400','1400 - 1500']
+            function sortByTiming(a, b) {
+                if (Number(a.slice(0,2)) == Number(b.slice(0,2))) {
+                    return 0;
+                } else {
+                    return (Number(a.slice(0,2)) < Number(b.slice(0,2))) ? -1 : 1;
+                }
+            }
+            // segements the timings into intervals. 
+            // E.g if the sorted array is ['0800 - 0900', '0900 - 1000', '1000 - 1100', '1300 - 1400','1400 -1500']
+            // it returns ['0800 - 1100', '1300 - 1500']
+            function segmentToIntervals(arr) {
+                var intervals = []
+                var currTime = arr[0].slice(0,4)
+
+                for (var i = 0; i < arr.length; i++) {
+                    if (i == arr.length - 1) {
+                        currTime = currTime + ' - ' + arr[i].slice(-4)
+                        intervals.push(currTime)
+                    } else if (arr[i].slice(-4) != arr[i + 1].slice(0,4)) {
+                        currTime = currTime + ' - ' + arr[i].slice(-4)
+                        intervals.push(currTime)
+                        currTime = arr[i + 1].slice(0,4)
+                    } else {
+                        continue
+                    }
+                }
+                return intervals
+            }
+            
+            this.docArr.forEach(async function(doc) {
+                let id = [doc['id']]
+                let userid = doc['userid']
+                let location = doc['location']
+                let pax = doc['pax']
+                async function retrieve(locationId) {     
+                    var locationData = []
+                        await database.collection('listings').doc(locationId).get().then(doc => {
+                            let listingData = doc.data()
+                            locationData.push(listingData['cover_photo'])
+                            locationData.push(listingData['name'])
+                        })
+                    return locationData
+                }
+                let locationAndName = await retrieve(location)                
+                let date = doc['date'].toDate().toString()
+                let dateOfVisit = date.slice(4,15)
+                // get the array of timings booked
+                let month = dateOfVisit.slice(0,3);
+                let time = doc['time']
+                // sort the array
+                let sortedTimings = time.sort(sortByTiming)
+
+                let startTiming = Number(sortedTimings[0].slice(0,2))
+                let currentDate = new Date().toDateString()
+                let currentHour = new Date().getHours()
+
+                let currentDateWithoutDayOfWeek = currentDate.substr(currentDate.indexOf(' ') + 1)
+                // get all the intervals booked by the user and store into an array called 'duration'
+                let duration = segmentToIntervals(sortedTimings)
+                // v-bind values
+                let vbindValues = [...id, location, pax, dateOfVisit]
+
+                let booking = [userid, pax, location, dateOfVisit, duration, month]
+                let combined = [...booking, ...locationAndName, vbindValues]
+    
+                if(new Date() < new Date(combined[3]) && combined[0] == currentUser) {
+                    upcoming.push(combined)
+                    upcoming.sort(sortByDateUpcoming)
+                } else if((currentDateWithoutDayOfWeek == dateOfVisit) && combined[0] == currentUser) {
+                    if (currentHour < startTiming) {
+                        upcoming.push(combined)
+                        upcoming.sort(sortByDateUpcoming)
+                    } else {
+                        past.push(combined)
+                        past.sort(sortByDatePast)
+                    }
+                } else if (combined[0] == currentUser) {
+                    past.push(combined)
+                    past.sort(sortByDatePast)
+                }
+            })
+            this.newBookings = upcoming
+            this.pastBookings = past
+        },
     },
 
   components: {

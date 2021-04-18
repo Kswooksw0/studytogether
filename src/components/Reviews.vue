@@ -269,6 +269,8 @@ export default {
       }
       const locationId = this.$route.params.id;
       const userId = firebase.auth().currentUser.uid;
+      const docId = this.$route.query.doc_id;
+
       async function retrieveUser(idOfUser) {
         var username = "";
         await database
@@ -295,6 +297,8 @@ export default {
           userid: userId,
           user: username,
         });
+
+        database.collection('bookings').doc(docId).delete().then(() => console.log('review sent and past booking deleted'))
 
       // get month doc id and currbookings and currrevenue
       var monthString = this.$route.query.date;
