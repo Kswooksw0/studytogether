@@ -305,7 +305,9 @@ export default {
                 datasets: [{
                     label: 'Total Monthly Revenue',
                     backgroundColor: '#f87979',
-                    data: Object.values(this.totalMonthlyRevenue)
+                    data: Object.values(this.totalMonthlyRevenue),
+                    fill: false,
+                    borderColor:'#f87979',
                 }]
             }
 
@@ -313,8 +315,10 @@ export default {
                 labels: Object.keys(this.totalMonthlyBookings),
                 datasets: [{
                     label: 'Total Monthly Bookings',
-                    backgroundColor: '#f87979',
-                    data: Object.values(this.totalMonthlyBookings)
+                    backgroundColor: '#0077b6',
+                    data: Object.values(this.totalMonthlyBookings),
+                    fill: false,
+                    borderColor:'#0077b6',
                 }]
             }
 
@@ -322,8 +326,10 @@ export default {
                 labels: Object.keys(this.totalMonthlyRatings),
                 datasets: [{
                     label: 'Average Monthly Ratings',
-                    backgroundColor: '#f87979',
-                    data: Object.values(this.totalMonthlyRatings)
+                    backgroundColor: '#fca311',
+                    data: Object.values(this.totalMonthlyRatings),
+                    fill: false,
+                    borderColor:'#fca311',
                 }]
             }
 
@@ -331,8 +337,10 @@ export default {
                 labels: Object.keys(this.totalMonthlyClicks),
                 datasets: [{
                     label: 'Total Monthly Clicks',
-                    backgroundColor: '#f87979',
-                    data: Object.values(this.totalMonthlyClicks)
+                    backgroundColor: '#90be6d',
+                    data: Object.values(this.totalMonthlyClicks),
+                    fill: false,
+                    borderColor:'#90be6d',
                 }]
             }
         },
@@ -417,7 +425,9 @@ export default {
                 datasets: [{
                     label: 'Total Revenue by Timeslots',
                     backgroundColor: '#f87979',
-                    data: Object.values(this.totalTimeRevenue)
+                    data: Object.values(this.totalTimeRevenue),
+                    fill: false,
+                    borderColor:'#f87979',
                 }]
             }
 
@@ -425,8 +435,10 @@ export default {
                 labels: Object.keys(this.totalTimeBookings),
                 datasets: [{
                     label: 'Total Bookings by Timeslots',
-                    backgroundColor: '#f87979',
-                    data: Object.values(this.totalTimeBookings)
+                    backgroundColor: '#0077b6',
+                    data: Object.values(this.totalTimeBookings),
+                    fill: false,
+                    borderColor:'#0077b6',
                 }]
             }
         },

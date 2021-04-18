@@ -188,10 +188,10 @@ export default {
           console.log("its empty")
           database.collection('listings').doc(locationID).collection('monthlyData').doc(monthString).set({
           month: monthString,
-          bookings: 0,
-          clicks: 0,
-          revenue: 0,
-          ratings: 0,
+          bookings: Number(0),
+          clicks: Number(0),
+          revenue: Number(0),
+          ratings: Number(0),
           }) 
         }
       })

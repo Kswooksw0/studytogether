@@ -984,6 +984,8 @@ export default {
               clicks: Number(0),
               revenue: Number(0),
               ratings: Number(0),
+              totalRatings: Number(0),
+              numRatings: Number(0)
             }) 
           }
         })
