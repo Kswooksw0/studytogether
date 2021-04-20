@@ -267,7 +267,7 @@ export default {
 				this.noise == 0 ||
 				this.rating == 0
 			) {
-       	 	return;
+       	 	    return;
 			}
 			const locationId = this.$route.params.id
             const userId = firebase.auth().currentUser.uid
